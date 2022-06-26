@@ -16,7 +16,7 @@ FROM honestventures/steamcmd-linux-wine:ubuntu-20 AS server
 WORKDIR /portalknights
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends jq && \
+    apt-get install --no-install-recommends --assume-yes jq && \
     rm -rf /var/lib/apt/lists/*
 
 # Don't copy the readme files to minimise image size
