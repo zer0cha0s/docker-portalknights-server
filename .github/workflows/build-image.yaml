@@ -14,7 +14,6 @@ on:
   workflow_dispatch:
 
 env:
-  PLATFORMS: linux/arm64/v8,linux/amd64
   IMAGE_NAME: "portalknights-server"
   BUILD_IMAGE: "true"
   BUILD_ID: "none"
@@ -87,11 +86,13 @@ jobs:
       #     username: ${{ github.repository_owner }}
       #     password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and push ${{ env.IMAGE_NAME }}:${{ env.VELOREN_VERSION }} Docker image
+      - name: Build and push ${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }} Docker image
         if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/build-push-action@v3
         with:
-          platforms: ${{ env.PLATFORMS }}
+          build-args: |
+            STEAM_USERNAME=${{ env.STEAM_USERNAME }}
+            STEAM_PASSWORD=${{ env.STEAM_PASSWORD }}
           file: Dockerfile
           push: true
           tags: ${{ steps.docker-meta.outputs.tags }}
