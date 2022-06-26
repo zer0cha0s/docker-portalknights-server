@@ -3,8 +3,6 @@ FROM steamcmd/steamcmd:ubuntu-20 AS downloader
 ARG STEAM_USERNAME
 ARG STEAM_PASSWORD
 
-ENV STEAM_USERNAME=${STEAM_USERNAME} STEAM_PASSWORD=${STEAM_PASSWORD}
-
 RUN steamcmd \
     +@sSteamCmdForcePlatformType windows \
     +force_install_dir /data \
