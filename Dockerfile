@@ -3,12 +3,14 @@ FROM steamcmd/steamcmd:ubuntu-20 AS downloader
 ARG STEAM_USERNAME
 ARG STEAM_PASSWORD
 
-RUN steamcmd \
-    +@sSteamCmdForcePlatformType windows \
-    +force_install_dir /data \
-    +login ${STEAM_USERNAME} ${STEAM_PASSWORD} \
-    +app_update 374040 \
-    +quit \
+RUN apt update \
+    && apt install -y --no-install-recommends unzip \
+    && steamcmd \
+        +@sSteamCmdForcePlatformType windows \
+        +force_install_dir /data \
+        +login ${STEAM_USERNAME} ${STEAM_PASSWORD} \
+        +app_update 374040 \
+        +quit \
     && unzip -d /dedicated_server /data/dedicated_server.zip
 
 FROM honestventures/steamcmd-linux-wine:ubuntu-20 AS server
