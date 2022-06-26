@@ -1,0 +1,128 @@
+name: docker
+
+on:
+  # Run every morning at 4:18am to automatically stay up to date
+  schedule:
+    - cron: "18 4 * * *"
+  # Run when any of the build setup changes
+  push:
+    branches: [master]
+    paths-ignore:
+      - '**/**.md'
+      - '.gitignore'
+  # Also allow manual runs
+  workflow_dispatch:
+
+env:
+  PLATFORMS: linux/arm64/v8,linux/amd64
+  IMAGE_NAME: "portalknights-server"
+  BUILD_IMAGE: "true"
+  BUILD_ID: "none"
+
+jobs:
+  check-build:
+    name: Check for Portal Knights updates
+    runs-on: ubuntu-latest
+    steps:
+      - id: build-id
+        name: Get current build ID for Portal Knights
+        run: |
+          BUILD_ID=$(curl https://api.steamcmd.net/v1/info/374040 \
+          | jq '.data."374040".depots.branches.public.buildid') \
+          && echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+
+      - id: check-image
+        name: Check whether ${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }} exists"
+        run: |
+          # Check whether there already is a Docker image for the current tag
+          IMAGE_TAGS=$(curl -s https://registry.hub.docker.com/v1/repositories/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}/tags | jq -r ".[].name") || IMAGE_TAGS="none"
+          for tag in ${IMAGE_TAGS[@]}; do
+            if [[ "$tag" == " ${{ env.BUILD_ID }}" ]]; then
+              echo "Image for build ${tag} already exists."
+              echo "BUILD_IMAGE=false" >> $GITHUB_ENV
+              exit
+            fi
+          done
+
+  download-server:
+    name: Download and store dedicated server
+    runs-on: windows-latest
+    if: ${{ env.BUILD_IMAGE == 'true' }}
+    steps:
+      - id: download-server
+        name: Download Portal Knights dedicated server
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            STEAM_USERNAME=${{ secrets.STEAM_USERNAME }}
+            STEAM_PASSWORD=${{ secrets.STEAM_PASSWORD }}
+          file: download-dedicated-server.Dockerfile
+          push: false
+          outputs: type=local,dest=output/
+
+      - id: store-server
+        name: Store Portal Knights dedicated server
+        uses: actions/upload-artifact@v3
+        with:
+          name: pk-dedicated-server-${{ env.BUILD_ID }}.zip
+          path: output/dedicated_server.zip
+
+  build-image:
+    name: Build dedicated server Docker image
+    runs-on: ubuntu-latest
+    if: ${{ env.BUILD_IMAGE == 'true' }}
+    steps:
+      - name: Generate datestamp
+        run: |
+          DATESTAMP=$(date +%Y-%m-%d)
+          echo "DATESTAMP=${DATESTAMP}" >> $GITHUB_ENV
+
+      - id: download-server
+        name: Download stored server for ${{ env.BUILD_ID }}
+        uses: actions/download-artifact@v3
+        with:
+          name: pk-dedicated-server-${{ env.BUILD_ID }}.zip
+
+      - id: unzip-server
+        name: Unzip dedicated server
+        run: unzip -d dedicated_server pk-dedicated-server-${{ env.BUILD_ID }}.zip
+
+      - name: Generate Docker image metadata
+        id: docker-meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,${{ env.BUILD_ID }}
+            type=raw,${{ env.DATESTAMP }}
+            type=raw,latest
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Setup Docker BuildKit
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2 
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push ${{ env.IMAGE_NAME }}:${{ env.VELOREN_VERSION }} Docker image
+        uses: docker/build-push-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.docker-meta.outputs.tags }}
+          labels: ${{ steps.docker-meta.outputs.labels }}
