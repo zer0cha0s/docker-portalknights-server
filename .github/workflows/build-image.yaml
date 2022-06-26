@@ -14,15 +14,16 @@ on:
   workflow_dispatch:
 
 env:
-  PLATFORMS: linux/arm64/v8,linux/amd64
+  PLATFORMS: linux/amd64
   IMAGE_NAME: "portalknights-server"
-  BUILD_IMAGE: "true"
-  BUILD_ID: "none"
 
 jobs:
   check-build:
     name: Check for Portal Knights updates
     runs-on: ubuntu-latest
+    outputs:
+      build-id: ${{ steps.build-id.outputs.build-id }}
+      build-image: ${{ steps.check-image.outputs.build-image }}
     steps:
       - id: build-id
         name: Get current build ID for Portal Knights
@@ -30,7 +31,7 @@ jobs:
           BUILD_ID=$(curl https://api.steamcmd.net/v1/info/374040 \
           | jq '.data."374040".depots.branches.public.buildid' \
           | sed s/\"//g) \
-          && echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          && echo "::set-output name=build-id::${BUILD_ID}"
 
       - id: check-image
         name: Check whether ${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }} exists"
@@ -39,8 +40,7 @@ jobs:
           IMAGE_TAGS=$(curl -s https://registry.hub.docker.com/v1/repositories/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}/tags | jq -r ".[].name") || IMAGE_TAGS="none"
           for tag in ${IMAGE_TAGS[@]}; do
             if [[ "$tag" == " ${{ env.BUILD_ID }}" ]]; then
-              echo "Image for build ${tag} already exists."
-              echo "BUILD_IMAGE=false" >> $GITHUB_ENV
+              echo "::set-output name=build-image::false"
               exit
             fi
           done
@@ -52,10 +52,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Check out code
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
 
       - id: download-server
         name: Download Portal Knights dedicated server
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         run: >
           docker build -f download-dedicated-server.Dockerfile
           --build-arg STEAM_USERNAME=${{ secrets.STEAM_USERNAME }}
@@ -64,41 +65,43 @@ jobs:
           .
 
       - id: store-server
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         name: Store Portal Knights dedicated server
         uses: actions/upload-artifact@v3
         with:
-          name: pk-dedicated-server-${{ env.BUILD_ID }}.zip
+          name: pk-dedicated-server-${{ needs.check-build.outputs.build-id }}.zip
           path: output/dedicated_server.zip
 
   build-image:
     name: Build dedicated server Docker image
-    needs: download-server
+    needs:
+      - check-build
+      - download-server
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         name: Check out code
 
       - name: Generate datestamp
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         run: |
           DATESTAMP=$(date +%Y-%m-%d)
           echo "DATESTAMP=${DATESTAMP}" >> $GITHUB_ENV
 
       - id: download-server
-        name: Download stored server for ${{ env.BUILD_ID }}
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        name: Download stored server for ${{ needs.check-build.outputs.build-id }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         uses: actions/download-artifact@v3
         with:
-          name: pk-dedicated-server-${{ env.BUILD_ID }}.zip
+          name: pk-dedicated-server-${{ needs.check-build.outputs.build-id }}.zip
 
       - id: unzip-server
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         name: Unzip dedicated server
-        run: unzip -d dedicated_server pk-dedicated-server-${{ env.BUILD_ID }}.zip
+        run: unzip -d dedicated_server pk-dedicated-server-${{ needs.check-build.outputs.build-id }}.zip
 
       - name: Generate Docker image metadata
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         id: docker-meta
         uses: docker/metadata-action@v4
         with:
@@ -106,35 +109,35 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,${{ env.BUILD_ID }}
+            type=raw,${{ needs.check-build.outputs.build-id }}
             type=raw,${{ env.DATESTAMP }}
             type=raw,latest
 
       - name: Setup QEMU
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         uses: docker/setup-qemu-action@v2
 
       - name: Setup Docker BuildKit
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         uses: docker/login-action@v2 
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         uses: docker/login-action@v2 
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and push ${{ env.IMAGE_NAME }}:${{ env.VELOREN_VERSION }} Docker image
-        if: ${{ env.BUILD_IMAGE == 'true' }}
+      - name: Build and push ${{ env.IMAGE_NAME }}:${{ needs.check-build.outputs.build-id }} Docker image
+        if: ${{ needs.check-build.outputs.build-image == "true" }}
         uses: docker/build-push-action@v3
         with:
           platforms: ${{ env.PLATFORMS }}
