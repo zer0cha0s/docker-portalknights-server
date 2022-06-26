@@ -56,11 +56,11 @@ jobs:
       - id: download-server
         name: Download Portal Knights dedicated server
         if: ${{ env.BUILD_IMAGE == 'true' }}
-        run: |
-          docker build -f download-dedicated-server.Dockerfile \
-          --build-arg STEAM_USERNAME=${{ secrets.STEAM_USERNAME }} \
+        run: >
+          docker build -f download-dedicated-server.Dockerfile
+          --build-arg STEAM_USERNAME=${{ secrets.STEAM_USERNAME }}
           --build-arg STEAM_PASSWORD=${{ secrets.STEAM_PASSWORD }}
-          --output type=local,dest=output \
+          --output type=local,dest=output
           .
 
       - id: store-server
