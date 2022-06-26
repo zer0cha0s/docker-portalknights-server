@@ -1,3 +1,18 @@
+FROM steamcmd/steamcmd:ubuntu-20 AS downloader
+
+ARG STEAM_USERNAME
+ARG STEAM_PASSWORD
+
+ENV STEAM_USERNAME=${STEAM_USERNAME} STEAM_PASSWORD=${STEAM_PASSWORD}
+
+RUN steamcmd \
+    +@sSteamCmdForcePlatformType windows \
+    +force_install_dir /data \
+    +login ${STEAM_USERNAME} ${STEAM_PASSWORD} \
+    +app_update 374040 \
+    +quit \
+    && unzip -d /dedicated_server /data/dedicated_server.zip
+
 FROM honestventures/steamcmd-linux-wine:ubuntu-20 AS server
 
 WORKDIR /portalknights
@@ -7,7 +22,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Don't copy the readme files to minimise image size
-COPY ./dedicated_server/pk_dedicated_server* ./dedicated_server/server_core* \
+COPY --from=downloader \
+    ./dedicated_server/pk_dedicated_server* \
+    ./dedicated_server/server_core* \
     /portalknights/
 COPY dist/* /portalknights/
 
