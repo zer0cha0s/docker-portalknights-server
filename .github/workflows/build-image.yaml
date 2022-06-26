@@ -87,8 +87,8 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           build-args: |
-            STEAM_USERNAME=${{ env.STEAM_USERNAME }}
-            STEAM_PASSWORD=${{ env.STEAM_PASSWORD }}
+            STEAM_USERNAME=${{ secrets.STEAM_USERNAME }}
+            STEAM_PASSWORD=${{ secrets.STEAM_PASSWORD }}
           file: Dockerfile
           push: true
           tags: ${{ steps.docker-meta.outputs.tags }}
