@@ -47,10 +47,10 @@ jobs:
   download-server:
     name: Download and store dedicated server
     runs-on: windows-latest
-    if: ${{ env.BUILD_IMAGE == 'true' }}
     steps:
       - id: download-server
         name: Download Portal Knights dedicated server
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/build-push-action@v3
         with:
           build-args: |
@@ -61,6 +61,7 @@ jobs:
           outputs: type=local,dest=output/
 
       - id: store-server
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         name: Store Portal Knights dedicated server
         uses: actions/upload-artifact@v3
         with:
@@ -70,24 +71,27 @@ jobs:
   build-image:
     name: Build dedicated server Docker image
     runs-on: ubuntu-latest
-    if: ${{ env.BUILD_IMAGE == 'true' }}
     steps:
       - name: Generate datestamp
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         run: |
           DATESTAMP=$(date +%Y-%m-%d)
           echo "DATESTAMP=${DATESTAMP}" >> $GITHUB_ENV
 
       - id: download-server
         name: Download stored server for ${{ env.BUILD_ID }}
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: actions/download-artifact@v3
         with:
           name: pk-dedicated-server-${{ env.BUILD_ID }}.zip
 
       - id: unzip-server
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         name: Unzip dedicated server
         run: unzip -d dedicated_server pk-dedicated-server-${{ env.BUILD_ID }}.zip
 
       - name: Generate Docker image metadata
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         id: docker-meta
         uses: docker/metadata-action@v4
         with:
@@ -100,18 +104,22 @@ jobs:
             type=raw,latest
 
       - name: Setup QEMU
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/setup-qemu-action@v2
 
       - name: Setup Docker BuildKit
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/login-action@v2 
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/login-action@v2 
         with:
           registry: ghcr.io
@@ -119,6 +127,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build and push ${{ env.IMAGE_NAME }}:${{ env.VELOREN_VERSION }} Docker image
+        if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/build-push-action@v3
         with:
           platforms: ${{ env.PLATFORMS }}
