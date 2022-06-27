@@ -20,9 +20,11 @@ RUN chmod -R a+rwx /dedicated_server \
 
 FROM scratch AS exporter
 
+WORKDIR /data
+
 # Don't copy the readme files to minimise image size
 COPY --from=downloader \
     /dedicated_server/pk_dedicated_server* \
     /dedicated_server/server_core* \
     /dedicated_server/pk-build-id.txt \
-    /
+    /data/
