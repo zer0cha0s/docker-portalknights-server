@@ -12,9 +12,10 @@ RUN apt update \
         +app_update 374040 \
         +quit \
     && unzip -d /dedicated_server /data/dedicated_server.zip \
+RUN chmod -R a+rwx /dedicated_server \
     && cat /data/steamapps/appmanifest_374040.acf \
         | sed -rn 's/\s*\"buildid\"\s+\"([0-9]+)\"/\1/p' \
-        >> /dedicated_server/buildid.txt \
+        >> /dedicated_server/pk-build-id.txt \
     && chmod a+rwx /dedicated_server/*
 
 FROM scratch AS exporter
@@ -23,5 +24,5 @@ FROM scratch AS exporter
 COPY --from=downloader \
     /dedicated_server/pk_dedicated_server* \
     /dedicated_server/server_core* \
-    /dedicated_server/buildid.txt \
+    /dedicated_server/pk-build-id.txt \
     /

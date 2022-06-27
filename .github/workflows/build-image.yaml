@@ -37,11 +37,11 @@ jobs:
             STEAM_PASSWORD=${{ secrets.STEAM_PASSWORD }}
           file: download-server.Dockerfile
           push: false
-          outputs: type=local,dest=${{ env.GITHUB_WORKSPACE }}/data
+          outputs: type=local,dest=data
 
       - name: Get current Portal Knights build ID
         run: |
-          echo "BUILD_ID=$(cat ${{ env.GITHUB_WORKSPACE }}/data/buildid.txt)" >> $GITHUB_ENV
+          echo "BUILD_ID=$(cat data/buildid.txt)" >> $GITHUB_ENV
 
       - name: Check whether ${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }} exists
         run: |
@@ -91,7 +91,6 @@ jobs:
         if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/build-push-action@v3
         with:
-          context: ${{ env.GITHUB_WORKSPACE }}
           file: Dockerfile
           push: true
           tags: ${{ steps.docker-meta.outputs.tags }}
@@ -102,4 +101,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: portalknights-server-cli-${{ env.BUILD_ID }}.zip
-          path: ${{ env.GITHUB_WORKSPACE }}/data/*
+          path: data/*
