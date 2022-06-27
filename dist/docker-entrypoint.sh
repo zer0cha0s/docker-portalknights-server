@@ -6,6 +6,7 @@ if [ -z ${ADMIN_PASSWORD} ]; then
     echo "------------------------------------------------------------------------"
     echo "---- Admin password: ${ADMIN_PASSWORD}                              ----"
     echo "------------------------------------------------------------------------"
+fi
 
 jq '.basicServerData.name='\"${SERVER_NAME}\"'
     | .gameplayMode='\"${GAMEPLAY_MODE}\"'
