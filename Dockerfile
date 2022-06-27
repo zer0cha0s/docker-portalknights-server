@@ -14,5 +14,5 @@ ENV SERVER_NAME="Portal Knights" \
 VOLUME /portalknights/savedata
 EXPOSE 16365
 
-ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT [ "/usr/bin/env" ]
 CMD [ "/portalknights/docker-entrypoint.sh" ]
