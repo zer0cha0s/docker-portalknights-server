@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends --assume-yes jq && \
     rm -rf /var/lib/apt/lists/*
 
-COPY ./data/* /portalknights/
+COPY data/* /portalknights/
 
 ENV SERVER_NAME="Portal Knights" \
     GAMEPLAY_MODE="Adventure" \

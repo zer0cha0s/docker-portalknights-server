@@ -53,13 +53,6 @@ jobs:
             fi
           done
 
-      - name: Store dedicated server as build artifact
-        if: ${{ env.BUILD_IMAGE == 'true' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: portalknights-server-cli-${{ env.BUILD_ID }}.zip
-          path: data/*
-
       - name: Generate datestamp
         if: ${{ env.BUILD_IMAGE == 'true' }}
         run: |
@@ -102,3 +95,10 @@ jobs:
           push: true
           tags: ${{ steps.docker-meta.outputs.tags }}
           labels: ${{ steps.docker-meta.outputs.labels }}
+
+      - name: Store dedicated server as build artifact
+        if: ${{ env.BUILD_IMAGE == 'true' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: portalknights-server-cli-${{ env.BUILD_ID }}.zip
+          path: data/*
