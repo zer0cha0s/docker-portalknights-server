@@ -11,7 +11,7 @@ RUN apt update \
         +login ${STEAM_USERNAME} ${STEAM_PASSWORD} \
         +app_update 374040 \
         +quit \
-    && unzip -d /dedicated_server /data/dedicated_server.zip \
+    && unzip -d /dedicated_server /data/dedicated_server.zip
 RUN chmod -R a+rwx /dedicated_server \
     && cat /data/steamapps/appmanifest_374040.acf \
         | sed -rn 's/\s*\"buildid\"\s+\"([0-9]+)\"/\1/p' \
