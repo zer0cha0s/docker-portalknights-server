@@ -20,7 +20,7 @@ FROM scratch AS exporter
 
 # Don't copy the readme files to minimise image size
 COPY --from=downloader \
-    ./dedicated_server/pk_dedicated_server* \
-    ./dedicated_server/server_core* \
-    ./dedicated_server/buildid.txt \
+    /dedicated_server/pk_dedicated_server* \
+    /dedicated_server/server_core* \
+    /dedicated_server/buildid.txt \
     /portalknights/
