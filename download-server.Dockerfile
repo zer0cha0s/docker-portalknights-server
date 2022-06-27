@@ -14,7 +14,8 @@ RUN apt update \
     && unzip -d /dedicated_server /data/dedicated_server.zip \
     && cat /data/steamapps/appmanifest_374040.acf \
         | sed -rn 's/\s*\"buildid\"\s+\"([0-9]+)\"/\1/p' \
-        >> /dedicated_server/buildid.txt
+        >> /dedicated_server/buildid.txt \
+    && chmod a+rwx /dedicated_server/*
 
 FROM scratch AS exporter
 
