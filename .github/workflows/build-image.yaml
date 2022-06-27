@@ -23,12 +23,25 @@ jobs:
     name: Build Portal Knights dedicated server Docker image
     runs-on: ubuntu-latest
     steps:
-      - name: Get current build ID for Portal Knights
+      - uses: actions/checkout@v2
+        name: Check out repo
+
+      - name: Setup Docker BuildKit
+        uses: docker/setup-buildx-action@v2
+
+      - name: Download Portal Knights dedicated server
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            STEAM_USERNAME=${{ secrets.STEAM_USERNAME }}
+            STEAM_PASSWORD=${{ secrets.STEAM_PASSWORD }}
+          file: download-server.Dockerfile
+          push: false
+          outputs: type=local,path=data
+
+      - name: Get current Portal Knights build ID
         run: |
-          BUILD_ID=$(curl https://api.steamcmd.net/v1/info/374040 \
-          | jq '.data."374040".depots.branches.public.buildid' \
-          | sed s/\"//g) \
-          && echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_ID=$(cat data/buildid.txt)" >> $GITHUB_ENV
 
       - name: Check whether ${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }} exists
         run: |
@@ -40,9 +53,12 @@ jobs:
             fi
           done
 
-      - uses: actions/checkout@v2
+      - name: Store dedicated server as build artifact
         if: ${{ env.BUILD_IMAGE == 'true' }}
-        name: Check out code
+        uses: actions/upload-artifact@v3
+        with:
+          name: portalknights-server-cli-${{ env.BUILD_ID }}.zip
+          path: data/*
 
       - name: Generate datestamp
         if: ${{ env.BUILD_IMAGE == 'true' }}
@@ -60,12 +76,8 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,${{ env.BUILD_ID }}
-            type=raw,{{ date 'YYYY-MM-DD' }}
+            type=raw,{{ date 'YYYY.MM.DD' }}
             type=raw,latest
-
-      - name: Setup Docker BuildKit
-        if: ${{ env.BUILD_IMAGE == 'true' }}
-        uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
         if: ${{ env.BUILD_IMAGE == 'true' }}
@@ -86,9 +98,6 @@ jobs:
         if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/build-push-action@v3
         with:
-          build-args: |
-            STEAM_USERNAME=${{ secrets.STEAM_USERNAME }}
-            STEAM_PASSWORD=${{ secrets.STEAM_PASSWORD }}
           file: Dockerfile
           push: true
           tags: ${{ steps.docker-meta.outputs.tags }}
