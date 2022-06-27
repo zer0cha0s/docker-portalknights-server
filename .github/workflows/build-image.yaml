@@ -37,7 +37,7 @@ jobs:
             STEAM_PASSWORD=${{ secrets.STEAM_PASSWORD }}
           file: download-server.Dockerfile
           push: false
-          outputs: type=local,path=data
+          outputs: type=local,dest=data
 
       - name: Get current Portal Knights build ID
         run: |
