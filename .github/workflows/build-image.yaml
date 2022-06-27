@@ -47,7 +47,7 @@ jobs:
         run: |
           IMAGE_TAGS=$(curl -s https://registry.hub.docker.com/v1/repositories/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}/tags | jq -r ".[].name") || IMAGE_TAGS="none"
           for tag in ${IMAGE_TAGS[@]}; do
-            if [[ "$tag" == " ${{ env.BUILD_ID }}" ]]; then
+            if [[ "$tag" == "build-${{ env.BUILD_ID }}" ]]; then
               echo "BUILD_IMAGE=false" >> $GITHUB_ENV
               exit
             fi
@@ -68,7 +68,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,${{ env.BUILD_ID }}
+            type=raw,build-${{ env.BUILD_ID }}
             type=raw,{{ date 'YYYY.MM.DD' }}
             type=raw,latest
 
