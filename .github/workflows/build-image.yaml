@@ -91,6 +91,7 @@ jobs:
         if: ${{ env.BUILD_IMAGE == 'true' }}
         uses: docker/build-push-action@v3
         with:
+          context: .
           file: Dockerfile
           push: true
           tags: ${{ steps.docker-meta.outputs.tags }}
