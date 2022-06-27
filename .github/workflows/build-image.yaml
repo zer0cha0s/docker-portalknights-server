@@ -41,9 +41,7 @@ jobs:
 
       - name: Get current Portal Knights build ID
         run: |
-          ls .
-          ls data
-          echo "BUILD_ID=$(cat data/buildid.txt)" >> $GITHUB_ENV
+          echo "BUILD_ID=$(cat data/pk-build-id.txt)" >> $GITHUB_ENV
 
       - name: Check whether ${{ env.IMAGE_NAME }}:${{ env.BUILD_ID }} exists
         run: |
