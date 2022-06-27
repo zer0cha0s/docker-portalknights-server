@@ -23,4 +23,4 @@ COPY --from=downloader \
     /dedicated_server/pk_dedicated_server* \
     /dedicated_server/server_core* \
     /dedicated_server/buildid.txt \
-    /portalknights/
+    /
