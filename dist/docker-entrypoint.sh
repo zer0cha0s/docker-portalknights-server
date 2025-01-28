@@ -9,8 +9,10 @@ if [ -z ${ADMIN_PASSWORD} ]; then
 fi
 
 jq '.basicServerData.name=[env.SERVER_NAME]
+    | .baseServerDate.ipv4=[env.IP_ADDRESS]
     | .gameplayMode=[env.GAMEPLAY_MODE]
     | .universeSize=[env.UNIVERSE_SIZE]
+    | .users.credentials.password=[env.USER_PASSWORD]
     | .admins.credentials.password=[env.ADMIN_PASSWORD]' \
     /portalknights/server_config_default.json > /portalknights/server_config.json
 
