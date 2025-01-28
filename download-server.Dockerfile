@@ -8,7 +8,8 @@ RUN apt update \
     && steamcmd \
         +@sSteamCmdForcePlatformType windows \
         +force_install_dir /data \
-        +login ${STEAM_USERNAME} ${STEAM_PASSWORD} \
+        #+login ${STEAM_USERNAME} ${STEAM_PASSWORD} \
+        +login anonymous \
         +app_update 374040 \
         +quit \
     && unzip -d /dedicated_server /data/dedicated_server.zip
