@@ -6,7 +6,7 @@ on:
     - cron: "18 4 * * *"
   # Run when any of the build setup changes
   push:
-    branches: [master]
+    branches: [main]
     paths-ignore:
       - '**/**.md'
       - '.gitignore'
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: "portalknights-server"
+  IMAGE_NAME: "docker-portalknights-server"
   BUILD_IMAGE: "true"
   BUILD_ID: "none"
 
